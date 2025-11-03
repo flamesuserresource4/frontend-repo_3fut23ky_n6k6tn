@@ -1,28 +1,56 @@
-import { useState } from 'react'
+import React, { useMemo, useState } from 'react';
+import Navbar from './components/Navbar';
+import SwapPage from './components/SwapPage';
+import LiquidityPage from './components/LiquidityPage';
+import PoolsPage from './components/PoolsPage';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+function randomAddress() {
+  const hex = Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  return '0x' + hex;
 }
 
-export default App
+export default function App() {
+  const [active, setActive] = useState('swap'); // swap | add | remove | pools
+  const [networkId, setNetworkId] = useState(31337);
+  const [wallet, setWallet] = useState({ connected: false, address: '', balance: '0.00' });
+
+  function toggleWallet() {
+    if (wallet.connected) {
+      setWallet({ connected: false, address: '', balance: '0.00' });
+    } else {
+      setWallet({ connected: true, address: randomAddress(), balance: (Math.random() * 3 + 0.1).toFixed(4) });
+    }
+  }
+
+  const gradient = useMemo(() => {
+    return networkId === 31337
+      ? 'from-gray-900 via-purple-900 to-black'
+      : 'from-indigo-900 via-blue-900 to-black';
+  }, [networkId]);
+
+  return (
+    <div className={`min-h-screen bg-gradient-to-br ${gradient} text-white`}> 
+      <Navbar
+        active={active}
+        onNavigate={setActive}
+        wallet={wallet}
+        onConnectToggle={toggleWallet}
+        networkId={networkId}
+        onChangeNetwork={setNetworkId}
+      />
+
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-[1.2fr] gap-6">
+          {active === 'swap' && <SwapPage />}
+          {active === 'add' && <LiquidityPage mode="add" />}
+          {active === 'remove' && <LiquidityPage mode="remove" />}
+          {active === 'pools' && <PoolsPage />}
+        </div>
+
+        <footer className="mt-10 text-center text-white/50 text-xs">
+          This is a visual prototype of a Uniswap V2-style DEX front-end. Connect to your smart contracts and wallet libraries to enable on-chain functionality.
+        </footer>
+      </main>
+    </div>
+  );
+}
